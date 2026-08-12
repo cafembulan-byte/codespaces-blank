@@ -9,11 +9,18 @@ if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true })
 }
 
-const db = new sqlite3.Database(dbPath)
+let db: sqlite3.Database | null = null
+
+function getDb() {
+  if (!db) {
+    db = new sqlite3.Database(dbPath)
+  }
+  return db
+}
 
 export function initializeDatabase() {
-  db.serialize(() => {
-    db.run(`
+  getDb().serialize(() => {
+    getDb().run(`
       CREATE TABLE IF NOT EXISTS admin_users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
@@ -22,7 +29,7 @@ export function initializeDatabase() {
       )
     `)
 
-    db.run(`
+    getDb().run(`
       CREATE TABLE IF NOT EXISTS menu_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         category TEXT NOT NULL,
@@ -34,7 +41,7 @@ export function initializeDatabase() {
       )
     `)
 
-    db.run(`
+    getDb().run(`
       CREATE TABLE IF NOT EXISTS gallery_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
@@ -45,7 +52,7 @@ export function initializeDatabase() {
       )
     `)
 
-    db.run(`
+    getDb().run(`
       CREATE TABLE IF NOT EXISTS reviews (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -59,7 +66,7 @@ export function initializeDatabase() {
 
 export function run<T = any>(sql: string, params: any[] = []): Promise<T> {
   return new Promise((resolve, reject) => {
-    db.run(sql, params, function (err) {
+    getDb().run(sql, params, function (err) {
       if (err) return reject(err)
       resolve({ lastID: this.lastID, changes: this.changes } as T)
     })
@@ -68,7 +75,7 @@ export function run<T = any>(sql: string, params: any[] = []): Promise<T> {
 
 export function all<T = any>(sql: string, params: any[] = []): Promise<T[]> {
   return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
+    getDb().all(sql, params, (err, rows) => {
       if (err) return reject(err)
       resolve(rows as T[])
     })
@@ -77,7 +84,7 @@ export function all<T = any>(sql: string, params: any[] = []): Promise<T[]> {
 
 export function get<T = any>(sql: string, params: any[] = []): Promise<T | undefined> {
   return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
+    getDb().get(sql, params, (err, row) => {
       if (err) return reject(err)
       resolve(row as T | undefined)
     })
@@ -88,12 +95,12 @@ export function seedDefaults() {
   const bcrypt = require('bcryptjs')
   const defaultHash = bcrypt.hashSync('coffee2026', 10)
 
-  db.run(
+  getDb().run(
     'INSERT OR IGNORE INTO admin_users (email, password_hash) VALUES (?, ?)',
     ['admin@harvestgrounds.com', defaultHash]
   )
 
-  db.run(
+  getDb().run(
     `INSERT OR IGNORE INTO menu_items (category, name, description, price, badge)
      VALUES (?, ?, ?, ?, ?), (?, ?, ?, ?, ?), (?, ?, ?, ?, ?), (?, ?, ?, ?, ?)
     `,
@@ -105,7 +112,7 @@ export function seedDefaults() {
     ]
   )
 
-  db.run(
+  getDb().run(
     `INSERT OR IGNORE INTO gallery_items (title, caption, image, position)
      VALUES (?, ?, ?, ?), (?, ?, ?, ?), (?, ?, ?, ?), (?, ?, ?, ?)
     `,
@@ -117,7 +124,7 @@ export function seedDefaults() {
     ]
   )
 
-  db.run(
+  getDb().run(
     `INSERT OR IGNORE INTO reviews (name, rating, comment)
      VALUES (?, ?, ?), (?, ?, ?)
     `,
@@ -131,4 +138,4 @@ export function seedDefaults() {
 initializeDatabase()
 seedDefaults()
 
-export default db
+export default getDb
