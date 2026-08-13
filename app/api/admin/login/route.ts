@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
 import { verifyAdmin } from '@/lib/admin'
+import { ensureDatabaseReady } from '@/lib/sqlite'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
   try {
+    await ensureDatabaseReady()
+    
     const body = await request.json()
     const { email, password } = body || {}
 
@@ -30,6 +33,7 @@ export async function POST(request: Request) {
 
     return response
   } catch (error) {
+    console.error('POST /api/admin/login error:', error)
     return NextResponse.json({ ok: false, message: 'Unable to process login.' }, { status: 500 })
   }
 }
