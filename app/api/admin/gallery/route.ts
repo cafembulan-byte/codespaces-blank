@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import { all, run } from '@/lib/sqlite'
 import { isAdminAuthenticated } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+
 function isAuthorized() {
   const cookieStore = cookies()
   const session = cookieStore.get('admin_session')?.value

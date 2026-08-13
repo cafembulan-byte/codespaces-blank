@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "init-db": "node scripts/init-db.js",
+    "create-admin": "node scripts/create-admin.js"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
